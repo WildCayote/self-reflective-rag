@@ -1,5 +1,9 @@
 langchain
+langchain-openai
+langchain-community
 langgraph
 pinecone
+pinecone[grpc]
 fastapi
 uvicorn
+dotenv
