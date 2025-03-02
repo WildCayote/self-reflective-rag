@@ -32,19 +32,44 @@ def store_embeddings(pc_client: Pinecone, index_name: str, name_space: str, embe
     records = []
     idx = 0
     for d, e in zip(documents, embeddings):
-        records.append(
-            {
+        record = {
                 "id": f"vector{idx}",
                 "values": e['values'],
-                "metadata": dict(d)['metadata'].update({'text': d.page_content})
+                "metadata": {"text": d.page_content}
             }
-        )
+        records.append(record)
 
         idx += 1
 
     result = index.upsert(vectors=records, namespace=name_space)
 
     return result
+
+def search_matching(api_key: str, query: str, index: str, name_space: str, model: str = "llama-text-embed-v2", top_k: int = 3):
+    pc = Pinecone(api_key=api_key)
+
+    # Obtain the index
+    index = pc.Index(name=index)
+
+    # Convert the query into a numerical vector that Pinecone can search with
+    query_embedding = pc.inference.embed(
+        model=model,
+        inputs=[query],
+        parameters={
+            "input_type": "query"
+        }
+    )
+
+    # Search the index for the three most similar vectors
+    results = index.query(
+        namespace=name_space,
+        vector=query_embedding[0].values,
+        top_k=3,
+        include_values=False,
+        include_metadata=True
+    )
+
+    return results
 
 if __name__ == '__main__':
     import os
@@ -447,3 +472,12 @@ Stay connected with Kifiya and keep up with the latest updates, news, and opport
         index_name='kifiya',
         name_space='test'
     )
+
+    result = search_matching(
+        api_key=os.environ.get('PINECONE_API_KEY'),
+        query="Where can I contact kifiya?",
+        index="kifiya",
+        name_space="test"
+    )
+
+    print(result)
