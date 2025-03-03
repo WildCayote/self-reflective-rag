@@ -30,8 +30,21 @@ def grade_documents(state: RAGState, document_grader: ChatOpenAI) -> RAGState:
     
     return {"documents": filtered_docs, "question": question}
 
-def generate_response(state: RAGState) -> RAGState:
-    ...
+def generate_response(state: RAGState, answer_generator: ChatOpenAI) -> RAGState:
+    print('---GENERATING RESPONSE---')
+    question = state['question']
+    documents = state["documents"]
+
+    result = answer_generator.invoke({
+        "question": question,
+        "context": documents
+    })
+
+    return {
+        "question": question,
+        "documents": documents,
+        "generation": result
+    }
 
 def transform_query(state: RAGState, question_rewriter: ChatOpenAI) -> RAGState:
     print('---REWRITTING---')
