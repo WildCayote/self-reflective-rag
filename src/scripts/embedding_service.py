@@ -39,14 +39,20 @@ class PineconeEmbeddingManager:
             inputs=[query],
             parameters={"input_type": "query"}
         )
-        return index.query(
+
+
+        results =  index.query(
             namespace=self.name_space,
             vector=query_embedding[0].values,
             top_k=top_k,
             include_values=False,
             include_metadata=True
-        )
+        )['matches']
 
+        documents = [result['metadata']['text'] for result in results]
+
+        return documents
+        
 if __name__ == '__main__':
     load_dotenv(find_dotenv())
     api_key = os.environ.get('PINECONE_API_KEY')
@@ -438,5 +444,6 @@ Stay connected with Kifiya and keep up with the latest updates, news, and opport
     
     manager.create_and_store_embeddings(md_header_splits, index_name='kifiya', name_space='test')
     
-    result = manager.search_matching("Where can I contact kifiya?", index="kifiya", name_space="test")
-    print(result)
+    result = manager.search_matching("Where can I contact kifiya?")
+    for doc in result:
+        print(doc)
