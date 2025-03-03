@@ -7,8 +7,10 @@ import os
 from dotenv import load_dotenv, find_dotenv
 
 class PineconeEmbeddingManager:
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, index_name: str, name_space: str):
         self.pc = Pinecone(api_key=api_key)
+        self.index_name = index_name
+        self.name_space = name_space
     
     def create_embeddings(self, documents: List[Document], model_name: str = "llama-text-embed-v2") -> EmbeddingsList:
         return self.pc.inference.embed(
@@ -17,28 +19,28 @@ class PineconeEmbeddingManager:
             parameters={"input_type": "passage", "truncate": "END"}
         )
     
-    def store_embeddings(self, index_name: str, name_space: str, embeddings: EmbeddingsList, documents: List[Document]):
-        index = self.pc.Index(name=index_name)
+    def store_embeddings(self, embeddings: EmbeddingsList, documents: List[Document]):
+        index = self.pc.Index(name=self.index_name)
         records = [
             {"id": f"vector{idx}", "values": e['values'], "metadata": {"text": d.page_content}}
             for idx, (d, e) in enumerate(zip(documents, embeddings))
         ]
-        return index.upsert(vectors=records, namespace=name_space)
+        return index.upsert(vectors=records, namespace=self.name_space)
     
-    def create_and_store_embeddings(self, documents: List[Document], index_name: str, name_space: str):
+    def create_and_store_embeddings(self, documents: List[Document]):
         embeddings = self.create_embeddings(documents)
-        result = self.store_embeddings(index_name, name_space, embeddings, documents)
+        result = self.store_embeddings(embeddings, documents)
         print(result)
     
-    def search_matching(self, query: str, index: str, name_space: str, model: str = "llama-text-embed-v2", top_k: int = 3):
-        index = self.pc.Index(name=index)
+    def search_matching(self, query: str, model: str = "llama-text-embed-v2", top_k: int = 3):
+        index = self.pc.Index(name=self.index_name)
         query_embedding = self.pc.inference.embed(
             model=model,
             inputs=[query],
             parameters={"input_type": "query"}
         )
         return index.query(
-            namespace=name_space,
+            namespace=self.name_space,
             vector=query_embedding[0].values,
             top_k=top_k,
             include_values=False,
@@ -48,7 +50,7 @@ class PineconeEmbeddingManager:
 if __name__ == '__main__':
     load_dotenv(find_dotenv())
     api_key = os.environ.get('PINECONE_API_KEY')
-    manager = PineconeEmbeddingManager(api_key=api_key)
+    manager = PineconeEmbeddingManager(api_key=api_key, index_name='kifiya', name_space='test')
     
     markdown_document = '''### **About Kifiya**  
 
