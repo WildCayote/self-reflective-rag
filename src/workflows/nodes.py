@@ -3,7 +3,7 @@ from workflows.states import RAGState
 from langchain_openai import ChatOpenAI
 
 def retrieve_documents(state: RAGState, retriever: PineconeEmbeddingManager) -> RAGState:
-    print('--RETRIEVING--')
+    print('---RETRIEVING---')
     question = state['question']
     documents = retriever.search_matching(query=question)
 
@@ -33,5 +33,18 @@ def grade_documents(state: RAGState, document_grader: ChatOpenAI) -> RAGState:
 def generate_response(state: RAGState) -> RAGState:
     ...
 
-def transform_query(state: RAGState) -> RAGState:
-    ...
+def transform_query(state: RAGState, question_rewriter: ChatOpenAI) -> RAGState:
+    print('---REWRITTING---')
+    question = state['question']
+    
+    result = question_rewriter.invoke({
+        "question": question
+    })
+
+    try:
+        count  = state['rewrite_count']
+        count += 1
+    except Exception as e:
+        count = 1
+
+    return {"question": result, "rewrite_count": count}
