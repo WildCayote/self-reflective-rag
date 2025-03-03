@@ -3,81 +3,53 @@ from langchain_core.documents import Document
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 from pinecone.grpc import PineconeGRPC as Pinecone
 from pinecone.core.openapi.inference.models import EmbeddingsList
+import os
+from dotenv import load_dotenv, find_dotenv
 
-def create_and_store_embeddings(api_key: str, documents: List[Document], index_name: str, name_space: str):
-    pc = Pinecone(api_key=api_key)
-
-    # obtain embeddings
-    embeddings = create_embeddings(pc_client=pc, documents=documents)
-
-    print(embeddings)
-
-    # store the embeddings
-    result = store_embeddings(pc_client=pc, index_name=index_name, name_space=name_space, embeddings=embeddings, documents=documents)
-
-    print(result)
-
-def create_embeddings(pc_client: Pinecone, documents: List[Document], model_name: str = "llama-text-embed-v2") -> EmbeddingsList:
-    embeddings = pc_client.inference.embed(
-        model=model_name,
-        inputs=[d.page_content for d in documents],
-        parameters={"input_type": "passage", "truncate": "END"}
-    )
-
-    return embeddings
-
-def store_embeddings(pc_client: Pinecone, index_name: str, name_space: str, embeddings: EmbeddingsList, documents: List[Document]):
-    index = pc_client.Index(name=index_name)
+class PineconeEmbeddingManager:
+    def __init__(self, api_key: str):
+        self.pc = Pinecone(api_key=api_key)
     
-    records = []
-    idx = 0
-    for d, e in zip(documents, embeddings):
-        record = {
-                "id": f"vector{idx}",
-                "values": e['values'],
-                "metadata": {"text": d.page_content}
-            }
-        records.append(record)
-
-        idx += 1
-
-    result = index.upsert(vectors=records, namespace=name_space)
-
-    return result
-
-def search_matching(api_key: str, query: str, index: str, name_space: str, model: str = "llama-text-embed-v2", top_k: int = 3):
-    pc = Pinecone(api_key=api_key)
-
-    # Obtain the index
-    index = pc.Index(name=index)
-
-    # Convert the query into a numerical vector that Pinecone can search with
-    query_embedding = pc.inference.embed(
-        model=model,
-        inputs=[query],
-        parameters={
-            "input_type": "query"
-        }
-    )
-
-    # Search the index for the three most similar vectors
-    results = index.query(
-        namespace=name_space,
-        vector=query_embedding[0].values,
-        top_k=3,
-        include_values=False,
-        include_metadata=True
-    )
-
-    return results
+    def create_embeddings(self, documents: List[Document], model_name: str = "llama-text-embed-v2") -> EmbeddingsList:
+        return self.pc.inference.embed(
+            model=model_name,
+            inputs=[d.page_content for d in documents],
+            parameters={"input_type": "passage", "truncate": "END"}
+        )
+    
+    def store_embeddings(self, index_name: str, name_space: str, embeddings: EmbeddingsList, documents: List[Document]):
+        index = self.pc.Index(name=index_name)
+        records = [
+            {"id": f"vector{idx}", "values": e['values'], "metadata": {"text": d.page_content}}
+            for idx, (d, e) in enumerate(zip(documents, embeddings))
+        ]
+        return index.upsert(vectors=records, namespace=name_space)
+    
+    def create_and_store_embeddings(self, documents: List[Document], index_name: str, name_space: str):
+        embeddings = self.create_embeddings(documents)
+        result = self.store_embeddings(index_name, name_space, embeddings, documents)
+        print(result)
+    
+    def search_matching(self, query: str, index: str, name_space: str, model: str = "llama-text-embed-v2", top_k: int = 3):
+        index = self.pc.Index(name=index)
+        query_embedding = self.pc.inference.embed(
+            model=model,
+            inputs=[query],
+            parameters={"input_type": "query"}
+        )
+        return index.query(
+            namespace=name_space,
+            vector=query_embedding[0].values,
+            top_k=top_k,
+            include_values=False,
+            include_metadata=True
+        )
 
 if __name__ == '__main__':
-    import os
-    from dotenv import load_dotenv, find_dotenv
-
-
     load_dotenv(find_dotenv())
-
+    api_key = os.environ.get('PINECONE_API_KEY')
+    manager = PineconeEmbeddingManager(api_key=api_key)
+    
     markdown_document = '''### **About Kifiya**  
 
 **Pioneers of Digital Financial Technology Excellence**    
@@ -458,26 +430,11 @@ Stay connected with Kifiya and keep up with the latest updates, news, and opport
 \- **LinkedIn:** https://www.linkedin.com/company/kifiya-financial-technology-plc/?originalSubdomain=et  
 '''
 
-    headers_to_split_on = [
-    ("###", "Header 3"),
-    ("####", "Header 4"),
-    ]
-
+    headers_to_split_on = [("###", "Header 3"), ("####", "Header 4")]
     markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on)
     md_header_splits = markdown_splitter.split_text(markdown_document)
-
-    create_and_store_embeddings(
-        api_key=os.environ.get('PINECONE_API_KEY'),
-        documents=md_header_splits,
-        index_name='kifiya',
-        name_space='test'
-    )
-
-    result = search_matching(
-        api_key=os.environ.get('PINECONE_API_KEY'),
-        query="Where can I contact kifiya?",
-        index="kifiya",
-        name_space="test"
-    )
-
+    
+    manager.create_and_store_embeddings(md_header_splits, index_name='kifiya', name_space='test')
+    
+    result = manager.search_matching("Where can I contact kifiya?", index="kifiya", name_space="test")
     print(result)
