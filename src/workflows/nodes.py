@@ -4,54 +4,54 @@ from langchain_openai import ChatOpenAI
 
 def retrieve_documents(state: RAGState, retriever: PineconeEmbeddingManager) -> RAGState:
     print('---RETRIEVING---')
-    question = state['question']
-    documents = retriever.search_matching(query=question)
+    prompt = state['prompt']
+    documents = retriever.search_matching(query=prompt)
 
-    return {"question": question, "documents": documents}
+    return {"prompt": prompt, "documents": documents}
 
 def grade_documents(state: RAGState, document_grader: ChatOpenAI) -> RAGState:
-    print("---CHECK DOCUMENT RELEVANCE TO QUESTION---")
-    question = state['question']
+    print("---CHECK DOCUMENT RELEVANCE TO prompt---")
+    prompt = state['prompt']
     documents = state['documents']
 
     filtered_docs = []
     for doc in documents:
         score = document_grader.invoke({
-            "question": question,
+            "prompt": prompt,
             "document": doc
         })
 
-        result = score
-        if result == "yes":
+        result = score.binary_score
+        if result == 'yes':
             print("---GRADE: DOCUMENT RELEVANT---")
             filtered_docs.append(doc)
         else:
             print("---GRADE: DOCUMENT NOT RELEVANT---")
     
-    return {"documents": filtered_docs, "question": question}
+    return {"documents": filtered_docs, "prompt": prompt}
 
 def generate_response(state: RAGState, answer_generator: ChatOpenAI) -> RAGState:
     print('---GENERATING RESPONSE---')
-    question = state['question']
+    prompt = state['prompt']
     documents = state["documents"]
 
     result = answer_generator.invoke({
-        "question": question,
+        "question": prompt,
         "context": documents
     })
 
     return {
-        "question": question,
+        "prompt": prompt,
         "documents": documents,
         "generation": result
     }
 
-def transform_query(state: RAGState, question_rewriter: ChatOpenAI) -> RAGState:
+def transform_query(state: RAGState, prompt_rewriter: ChatOpenAI) -> RAGState:
     print('---REWRITTING---')
-    question = state['question']
+    prompt = state['prompt']
     
-    result = question_rewriter.invoke({
-        "question": question
+    result = prompt_rewriter.invoke({
+        "prompt": prompt
     })
 
     try:
@@ -60,4 +60,5 @@ def transform_query(state: RAGState, question_rewriter: ChatOpenAI) -> RAGState:
     except Exception as e:
         count = 1
 
-    return {"question": result, "rewrite_count": count}
+    return {"prompt": result, "rewrite_count": count}
+

@@ -3,22 +3,22 @@ from langchain import hub
 
 REWRITER_PROMPT = ChatPromptTemplate.from_messages(
     [
-        ("system", """You a question re-writer that converts an input question to a better version that is optimized \n 
+        ("system", """You a prompt re-writer that converts an input prompt to a better version that is optimized \n 
      for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning."""),
         (
             "human",
-            "Here is the initial question: \n\n {question} \n Formulate an improved question.",
+            "Here is the initial prompt: \n\n {prompt} \n Formulate an improved prompt.",
         ),
     ]
 )
 
 GRADER_PROMPT = ChatPromptTemplate.from_messages(
     [
-        ("system", """You are a grader assessing relevance of a retrieved document to a user question. \n 
+        ("system", """You are a grader assessing relevance of a retrieved document to a user prompt. \n 
     It does not need to be a stringent test. The goal is to filter out erroneous retrievals. \n
-    If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
-    Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question."""),
-        ("human", "Retrieved document: \n\n {document} \n\n User question: {question}"),
+    If the document contains keyword(s) or semantic meaning related to the user prompt, grade it as relevant. \n
+    Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the prompt."""),
+        ("human", "Retrieved document: \n\n {document} \n\n User prompt: {prompt}"),
     ]
 )
 
@@ -32,9 +32,9 @@ HALLUCINATION_PROMPT = ChatPromptTemplate.from_messages(
 
 ANSWER_PROMPT = ChatPromptTemplate.from_messages(
     [
-        ("system", """You are a grader assessing whether an answer addresses / resolves a question \n 
-     Give a binary score 'yes' or 'no'. Yes' means that the answer resolves the question."""),
-        ("human", "User question: \n\n {question} \n\n LLM generation: {generation}"),
+        ("system", """You are a grader assessing whether an answer addresses / resolves a prompt \n 
+     Give a binary score 'yes' or 'no'. Yes' means that the answer resolves the prompt."""),
+        ("human", "User prompt: \n\n {prompt} \n\n LLM generation: {generation}"),
     ]
 )
 

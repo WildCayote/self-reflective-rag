@@ -32,7 +32,7 @@ class PineconeEmbeddingManager:
         result = self.store_embeddings(embeddings, documents)
         print(result)
     
-    def search_matching(self, query: str, model: str = "llama-text-embed-v2", top_k: int = 3):
+    def search_matching(self, query: str, model: str = "llama-text-embed-v2", top_k: int = 5):
         index = self.pc.Index(name=self.index_name)
         query_embedding = self.pc.inference.embed(
             model=model,

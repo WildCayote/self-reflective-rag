@@ -8,7 +8,7 @@ rag_router = APIRouter(prefix='/rag', tags=['RAG'])
 @rag_router.post("/query")
 async def get_response(request: RAGRequest):
     result = app.invoke(
-        {"question" : request.question}
+        {"prompt" : request.question}
     )
     
     return result 
