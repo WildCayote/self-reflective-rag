@@ -7,8 +7,16 @@ rag_router = APIRouter(prefix='/rag', tags=['RAG'])
 
 @rag_router.post("/query")
 async def get_response(request: RAGRequest):
-    result = app.invoke(
-        {"prompt" : request.question}
-    )
+    if request.user_id != None:
+        result = app.invoke(
+        {
+            "prompt" : request.question,
+            "user_id": request.user_id
+        }
+        )
+    else: 
+        result = app.invoke(
+            {"prompt" : request.question,}
+        )
     
     return result 

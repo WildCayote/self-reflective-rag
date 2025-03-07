@@ -3,7 +3,7 @@ from dotenv import load_dotenv, find_dotenv
 from workflows.nodes import generate_response, retrieve_documents, grade_documents, transform_query, generate_assistant_response
 from workflows.edges import decide_to_generate
 from workflows.agents import document_grader, prompt_rewriter, answer_generator, assistant
-from workflows.states import RAGState
+from workflows.states import RAGState, InputState, OutputState
 from scripts.embedding_service import PineconeEmbeddingManager
 from langgraph.graph import START, END, StateGraph
 
@@ -25,7 +25,7 @@ generator = lambda state: generate_response(state=state, answer_generator=answer
 assistant_node = lambda state: generate_assistant_response(state=state, assistant=assistant)
 
 # create a workflow/graph
-workflow = StateGraph(RAGState)
+workflow = StateGraph(RAGState, input=InputState, output=OutputState)
 
 # register the nodes to the workflow/graph
 workflow.add_node("retrieve", retriever)
