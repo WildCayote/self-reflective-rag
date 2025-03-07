@@ -2,7 +2,7 @@ import os
 from dotenv import find_dotenv, load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
-from workflows.prompts import HALLUCINATION_PROMPT, ANSWER_PROMPT, REWRITER_PROMPT, RAG_PROMPT, GRADER_PROMPT
+from workflows.prompts import HALLUCINATION_PROMPT, ANSWER_PROMPT, REWRITER_PROMPT, RAG_PROMPT, GRADER_PROMPT, FINAL_ANSWER_PROMPT
 from workflows.models import GradeAnswer, GradeHallucinations, GradeDocuments
 
 
@@ -30,5 +30,8 @@ prompt_rewriter = REWRITER_PROMPT | llm | StrOutputParser()
 structured_document_grader = llm.with_structured_output(GradeDocuments)
 document_grader = GRADER_PROMPT | structured_document_grader # Didn't try to enfornce structured output because deepseek doesn't support it
 
-# create an llm that will produce the final answer
+# create an llm that will produce the final rag answer
 answer_generator = RAG_PROMPT | llm | StrOutputParser()
+
+# create an llm that will produce the answer but has a persona of the KAVAS assistant
+assistant = FINAL_ANSWER_PROMPT | llm | StrOutputParser()

@@ -4,7 +4,8 @@ from langchain import hub
 REWRITER_PROMPT = ChatPromptTemplate.from_messages(
     [
         ("system", """You a prompt re-writer that converts an input prompt to a better version that is optimized \n 
-     for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning."""),
+     for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning. 
+     \n DO NOT PUT IN YOUR REASONING. RETURN THE IMPROVED PROMPT YOU THINK WILL WORK NOT ANYTHIN MORE OR ANYTHIN LESS!"""),
         (
             "human",
             "Here is the initial prompt: \n\n {prompt} \n Formulate an improved prompt.",
@@ -39,3 +40,12 @@ ANSWER_PROMPT = ChatPromptTemplate.from_messages(
 )
 
 RAG_PROMPT = hub.pull("rlm/rag-prompt")
+
+FINAL_ANSWER_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", """You are KAVAS, an AI assistant with a woman persona. Your role is to provide human-like interactions with natural conversation capabilities. 
+        Based on the RAG response, deliver a concise and clear answer to the user. If the RAG response is insufficient, politely guide the user to additional resources."""),
+        ("human", """RAG response: \n\n {generation} \n\n Please provide a final answer in a friendly and concise manner, ensuring it aligns with the persona of KAVAS. 
+        If the RAG response is incomplete or unclear, respond with: "This is what I found, but for further information, please contact info@kifiya.com."""),
+    ]
+)

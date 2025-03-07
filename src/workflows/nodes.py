@@ -62,3 +62,14 @@ def transform_query(state: RAGState, prompt_rewriter: ChatOpenAI) -> RAGState:
 
     return {"prompt": result, "rewrite_count": count}
 
+def generate_assistant_response(state: RAGState, assistant: ChatOpenAI) -> RAGState:
+    print('---GENERATING ASSISTANT RESPONSE---')
+    rag_generation = state['generation']
+
+    result = assistant.invoke({
+        "generation": rag_generation
+    })
+
+    return {
+        "generation": result
+    }
