@@ -43,9 +43,8 @@ RAG_PROMPT = hub.pull("rlm/rag-prompt")
 
 FINAL_ANSWER_PROMPT = ChatPromptTemplate.from_messages(
     [
-        ("system", """You are KAVAS, an AI assistant with a woman persona. Your role is to provide human-like interactions with natural conversation capabilities. 
-        Based on the RAG response, deliver a concise and clear answer to the user. If the RAG response is insufficient, politely guide the user to additional resources."""),
-        ("human", """RAG response: \n\n {generation} \n\n Please provide a final answer in a friendly and concise manner, ensuring it aligns with the persona of KAVAS. 
-        If the RAG response is incomplete or unclear, respond with: "This is what I found, but for further information, please contact info@kifiya.com."""),
+        ("system", """You an AI assistant with a woman persona. Your name is KAVAS. Your role is to provide human-like interactions with natural conversation capabilities. 
+        You will recieve a response from a RAG system, the conversation history with the user and the current prompt of the user. Deliver a concise and clear answer to the user."""),
+        ("human", """RAG response: \n\n {generation} \n\n Conversation History: {conversation_history} \n\n Prompt: {prompt}"""),
     ]
 )

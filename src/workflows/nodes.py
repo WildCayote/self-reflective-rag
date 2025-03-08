@@ -32,8 +32,13 @@ def grade_documents(state: RAGState, document_grader: ChatOpenAI) -> RAGState:
 
 def generate_response(state: RAGState, answer_generator: ChatOpenAI) -> RAGState:
     print('---GENERATING RESPONSE---')
-    prompt = state['prompt']
     documents = state["documents"]
+    try:
+        _  = state['rewrite_count']
+        prompt = state['rewritten_prompt']
+
+    except Exception as e:
+        prompt = state['prompt']
 
     result = answer_generator.invoke({
         "question": prompt,
@@ -41,33 +46,38 @@ def generate_response(state: RAGState, answer_generator: ChatOpenAI) -> RAGState
     })
 
     return {
-        "prompt": prompt,
-        "documents": documents,
         "generation": result
     }
 
 def transform_query(state: RAGState, prompt_rewriter: ChatOpenAI) -> RAGState:
     print('---REWRITTING---')
-    prompt = state['prompt']
-    
-    result = prompt_rewriter.invoke({
-        "prompt": prompt
-    })
-
+   
     try:
         count  = state['rewrite_count']
+        prompt = state['rewritten_prompt']
+        result = prompt_rewriter.invoke({
+        "prompt": prompt
+        })
         count += 1
     except Exception as e:
+        prompt = state['prompt']
+        result = prompt_rewriter.invoke({
+        "prompt": prompt
+        })
         count = 1
 
-    return {"prompt": result, "rewrite_count": count}
+    return {"rewritten_prompt": result, "rewrite_count": count}
 
 def generate_assistant_response(state: RAGState, assistant: ChatOpenAI) -> RAGState:
     print('---GENERATING ASSISTANT RESPONSE---')
     rag_generation = state['generation']
+    conversation_history = state["conversation_history"]
+    original_prompt = state["prompt"]
 
     result = assistant.invoke({
-        "generation": rag_generation
+        "generation": rag_generation,
+        "conversation_history": conversation_history,
+        "prompt": original_prompt
     })
 
     return {

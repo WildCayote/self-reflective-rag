@@ -43,6 +43,3 @@ workflow.add_edge("assistant", END)
 
 # add conditional edges
 workflow.add_conditional_edges(source="grade_documents", path=decide_to_generate)
-
-# compile the workflow/graph
-app = workflow.compile()
