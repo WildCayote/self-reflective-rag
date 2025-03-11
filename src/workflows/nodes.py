@@ -17,12 +17,13 @@ def grade_documents(state: RAGState, document_grader: ChatOpenAI) -> RAGState:
     filtered_docs = []
     for doc in documents:
         score = document_grader.invoke({
-            "prompt": prompt,
-            "document": doc
+            "prompt": str(prompt),
+            "document": str(doc)
         })
 
-        result = score.binary_score
-        if result == 'yes':
+        result = score
+        print(result)
+        if "'yes'" in result or "'Yes'" in result or "'YES'" in result or "yes" in result:
             print("---GRADE: DOCUMENT RELEVANT---")
             filtered_docs.append(doc)
         else:
