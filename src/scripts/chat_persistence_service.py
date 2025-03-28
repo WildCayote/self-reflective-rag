@@ -9,7 +9,7 @@ from datetime import datetime
 load_dotenv(find_dotenv())
 
 # Constants
-MAX_TOKEN_COUNT = 500 # Threshold for triggering summarization
+MAX_TOKEN_COUNT = 300 # Threshold for triggering summarization
 LAST_MESSAGES_TO_KEEP = 3  # Number of recent messages to preserve unchanged
 LLM_MODEL = "gpt-3.5-turbo"  # OpenAI model for summarization
 
@@ -129,24 +129,24 @@ def extract_user_details(messages):
 
 def summarize_conversation(messages):
     """
-    Improved summarization that handles long messages properly
+    Robust summarization with proper type checking
     """
-    print('Summarizing conversation')
     if not messages:
         return "No messages to summarize", []
     
-    # Break down long messages into chunks
+    # Process messages with type safety
     processed_messages = []
     for msg in messages:
-        user_msg = msg.get('user_message', '')
-        ai_msg = msg.get('ai_message', '')
+        # Ensure messages are strings
+        user_msg = str(msg.get('user_message', ''))
+        ai_msg = str(msg.get('ai_message', ''))
         
-        # Split long messages into sentences
-        user_chunks = [s.strip() for s in re.split(r'(?<=[.!?]) +', user_msg) if s]
-        ai_chunks = [s.strip() for s in re.split(r'(?<=[.!?]) +', ai_msg) if s]
+        # Split into sentences if they exist
+        user_chunks = [s.strip() for s in re.split(r'(?<=[.!?]) +', user_msg) if s] if user_msg else []
+        ai_chunks = [s.strip() for s in re.split(r'(?<=[.!?]) +', ai_msg) if s] if ai_msg else []
         
-        # Rebuild into manageable chunks
-        max_chunk_length = 3  # sentences per chunk
+        # Rebuild into chunks
+        max_chunk_length = 3
         for i in range(0, max(len(user_chunks), len(ai_chunks)), max_chunk_length):
             chunk = {
                 'user_message': ' '.join(user_chunks[i:i+max_chunk_length]),
@@ -155,45 +155,47 @@ def summarize_conversation(messages):
             }
             processed_messages.append(chunk)
     
-    # Now summarize the processed chunks
     try:
+        # Generate summary
         conversation_text = "\n".join(
             f"User: {msg['user_message']}\nAI: {msg['ai_message']}" 
             for msg in processed_messages
-        )
+        )[:8000]  # Stay within context limits
         
         response = ai_client.chat.completions.create(
             model=LLM_MODEL,
             messages=[{
                 "role": "system",
-                "content": "Summarize this conversation concisely, preserving key points and user details:"
+                "content": "Summarize this conversation concisely:"
             }, {
                 "role": "user",
-                "content": conversation_text[:8000]  # Ensure we don't exceed context limits
+                "content": conversation_text
             }],
-            temperature=0.3,
-            max_tokens=50
+            temperature=0.2,
+            max_tokens=200
         )
-        
-        summary = response.choices[0].message.content.strip()
-        return summary
+        return response.choices[0].message.content.strip(), messages[-LAST_MESSAGES_TO_KEEP:]
     except Exception as e:
         print(f"Summarization error: {e}")
-        return "Failed to generate summary", messages
+        return "Conversation summary unavailable", messages[-LAST_MESSAGES_TO_KEEP:]
+
 
 def save_chat_message(user_id, user_message, ai_message):
-    """Modified to handle long messages properly and truncate recent messages"""
+    """With enhanced type safety"""
     timestamp = datetime.utcnow().isoformat()
     
-    # Normalize message format
-    if isinstance(ai_message, dict):
-        ai_message = ai_message.get('generation', str(ai_message))
+    # Ensure messages are strings
+    user_message = str(user_message)[:2000]
+    ai_message = str(ai_message.get('generation', ai_message) if isinstance(ai_message, dict) else str(ai_message))
+    ai_message = ai_message[:2000]
     
     new_message = {
-        'user_message': user_message[:2000],  # Truncate very long messages
-        'ai_message': ai_message[:2000],
+        'user_message': user_message,
+        'ai_message': ai_message,
         'timestamp': timestamp
     }
+
+    # Rest of your save logic remains the same...
 
     user_chat = chat_collection.find_one({'user_id': user_id})
     
