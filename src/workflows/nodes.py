@@ -21,9 +21,9 @@ def grade_documents(state: RAGState, document_grader: ChatOpenAI) -> RAGState:
             "document": str(doc)
         })
 
-        result = score
+        result = score.binary_score
         print(result)
-        if "'yes'" in result or "'Yes'" in result or "'YES'" in result or "yes" in result:
+        if result == "yes":
             print("---GRADE: DOCUMENT RELEVANT---")
             filtered_docs.append(doc)
         else:

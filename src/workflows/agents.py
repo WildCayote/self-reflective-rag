@@ -21,14 +21,14 @@ hallucination_grader = HALLUCINATION_PROMPT | structured_hallucination_grader # 
 
 # create an llm that will grade if the answer is enough or not
 structured_answer_grader = llm.with_structured_output(GradeAnswer)
-answer_grader = ANSWER_PROMPT | StrOutputParser() # Didn't try to enfornce structured output because deepseek doesn't support it
+answer_grader = ANSWER_PROMPT | llm | StrOutputParser() # Didn't try to enfornce structured output because deepseek doesn't support it
 
 # create an llm that will rewrite the prompt/user-prompt
 prompt_rewriter = REWRITER_PROMPT | llm | StrOutputParser()
 
 # create an llm that will grade the documents
 structured_document_grader = llm.with_structured_output(GradeDocuments)
-document_grader = GRADER_PROMPT | llm | StrOutputParser() # Didn't try to enfornce structured output because deepseek doesn't support it
+document_grader = GRADER_PROMPT | structured_document_grader # Didn't try to enfornce structured output because deepseek doesn't support it
 
 # create an llm that will produce the final rag answer
 answer_generator = RAG_PROMPT | llm | StrOutputParser()
