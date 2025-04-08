@@ -1,6 +1,6 @@
 from workflows.states import RAGState
 
-def decide_to_generate(state: RAGState, max_rewrites: int = 2) -> str:
+def decide_to_generate(state: RAGState, max_rewrites: int = 1) -> str:
     print("---INSPECT THE GRADED DOCUMENTS---")
     filtered_documents = state.get("documents", [])
 
