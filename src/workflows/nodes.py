@@ -12,22 +12,21 @@ def retrieve_documents(state: RAGState, retriever: PineconeEmbeddingManager) -> 
 def grade_documents(state: RAGState, document_grader: ChatOpenAI) -> RAGState:
     print("---CHECK DOCUMENT RELEVANCE TO prompt---")
     prompt = state['prompt']
-    documents = state['documents']
+    documents = [f"{doc}" for doc in state['documents']]
 
     filtered_docs = []
-    for doc in documents:
-        score = document_grader.invoke({
+    score = document_grader.invoke({
             "prompt": str(prompt),
-            "document": str(doc)
+            "document": str(''.join(documents))
         })
 
-        result = score
-        print(result)
-        if "'yes'" in result or "'Yes'" in result or "'YES'" in result or "yes" in result or "Yes" in result:
-            print("---GRADE: DOCUMENT RELEVANT---")
-            filtered_docs.append(doc)
-        else:
-            print("---GRADE: DOCUMENT NOT RELEVANT---")
+    result = score.binary_score
+    print(result)
+    if ("'yes'" in result) or ("'Yes'" in result) or ("'YES'" in result) or ("yes" in result) or ("Yes" in result):
+        print("---GRADE: DOCUMENT RELEVANT---")
+        filtered_docs.append(documents)
+    else:
+        print("---GRADE: DOCUMENT NOT RELEVANT---")
     
     return {"documents": filtered_docs, "prompt": prompt}
 
