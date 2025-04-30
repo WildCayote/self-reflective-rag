@@ -28,6 +28,7 @@ assistant_node = lambda state: generate_assistant_response(state=state, assistan
 workflow = StateGraph(RAGState, input=InputState, output=OutputState)
 
 # register the nodes to the workflow/graph
+
 workflow.add_node("retrieve", retriever)
 workflow.add_node("rewriter", rewriter)
 workflow.add_node("grade_documents", grader)

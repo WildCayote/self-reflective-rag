@@ -2,7 +2,7 @@ import os
 from dotenv import find_dotenv, load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
-from workflows.prompts import HALLUCINATION_PROMPT, ANSWER_PROMPT, REWRITER_PROMPT, RAG_PROMPT, GRADER_PROMPT, FINAL_ANSWER_PROMPT
+from workflows.prompts import EXTRACTOR_PROMPT, HALLUCINATION_PROMPT, ANSWER_PROMPT, REWRITER_PROMPT, RAG_PROMPT, GRADER_PROMPT, FINAL_ANSWER_PROMPT
 from workflows.models import GradeAnswer, GradeHallucinations, GradeDocuments
 
 
@@ -25,6 +25,8 @@ answer_grader = ANSWER_PROMPT | StrOutputParser() # Didn't try to enfornce struc
 
 # create an llm that will rewrite the prompt/user-prompt
 prompt_rewriter = REWRITER_PROMPT | llm | StrOutputParser()
+
+query_extractor = EXTRACTOR_PROMPT | llm | StrOutputParser()
 
 # create an llm that will grade the documents
 structured_document_grader = llm.with_structured_output(GradeDocuments)

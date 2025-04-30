@@ -38,6 +38,17 @@ ANSWER_PROMPT = ChatPromptTemplate.from_messages(
         ("human", "User prompt: \n\n {prompt} \n\n LLM generation: {generation}"),
     ]
 )
+EXTRACTOR_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", """You are a prompt extractor that extracts the user prompt from a set of messages. \n 
+     Look at the input and try to reason about the underlying semantic intent / meaning. \n
+     DO NOT PUT IN YOUR REASONING. RETURN THE EXTRACTED PROMPT YOU THINK WILL WORK NOT ANYTHIN MORE OR ANYTHIN LESS!"""),
+        (
+            "human",
+            "Here is the set of talks: \n\n {questions} \n Formulate an extracted prompt.",
+        ),
+    ]
+)
 
 RAG_PROMPT = hub.pull("rlm/rag-prompt")
 

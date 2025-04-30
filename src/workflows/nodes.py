@@ -1,11 +1,25 @@
 from scripts.embedding_service import PineconeEmbeddingManager
+from dtos.rag import RAGRequest
 from workflows.states import RAGState
 from langchain_openai import ChatOpenAI
+from workflows.agents import query_extractor
+
+def query_extractor(talks: list[RAGRequest], prompt_extractor=query_extractor) -> str:
+    """
+    Extract the query from the input state.
+    """
+    print('---EXTRACTING QUERY---')
+    prompt = prompt_extractor.invoke({
+        "questions": [talk.question for talk in talks]
+    })
+
+    return prompt
 
 def retrieve_documents(state: RAGState, retriever: PineconeEmbeddingManager) -> RAGState:
     print('---RETRIEVING---')
     prompt = state['prompt']
     documents = retriever.search_matching(query=prompt)
+    print(documents)
 
     return {"prompt": prompt, "documents": documents}
 
@@ -45,7 +59,7 @@ def generate_response(state: RAGState, answer_generator: ChatOpenAI) -> RAGState
         "question": prompt,
         "context": documents
     })
-
+    print(result)
     return {
         "generation": result
     }
@@ -72,7 +86,7 @@ def transform_query(state: RAGState, prompt_rewriter: ChatOpenAI) -> RAGState:
 def generate_assistant_response(state: RAGState, assistant: ChatOpenAI) -> RAGState:
     print('---GENERATING ASSISTANT RESPONSE---')
     rag_generation = state['generation']
-    conversation_history = state["conversation_history"]
+    conversation_history = state["conversation_history"] if "conversation_history" in state else []
     original_prompt = state["prompt"]
 
     result = assistant.invoke({
